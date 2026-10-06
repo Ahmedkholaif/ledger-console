@@ -1,0 +1,53 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      # Builds with no ledger API reachable: proves nothing live is baked in at build time.
+      - run: npm run build
+        env: { LEDGER_API_URL: "http://127.0.0.1:9" }
+
+  e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        backend: [ledgerd, ledger-nest]
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: ledger }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U postgres" --health-interval 2s --health-retries 20
+    env:
+      DB: postgres://postgres:postgres@localhost:5432/ledger
+      LEDGER_API_URL: http://127.0.0.1:8080
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - name: start ledgerd (Go)
+        if: matrix.backend == 'ledgerd'
+        run: |
+          GOPROXY=direct go install github.com/Ahmedkholaif/ledgerd/cmd/ledgerd@main
+          DATABASE_URL="$DB?sslmode=disable" ADDR=127.0.0.1:8080 ~/go/bin/ledgerd > backend.log 2>&1 &
+      - name: start ledger-nest (NestJS)
+        if: matrix.backend == 'ledger-nest'
+        run: |
+          git clone --depth 1 https://github.com/Ahmedkholaif/ledger-nest.git ../ledger-nest
+          (cd ../ledger-nest && npm ci && npm run build)
+          DATABASE_URL=$DB PORT=8080 node ../ledger-nest/dist/main.js > backend.log 2>&1 &
+      - run: for i in $(seq 1 30); do curl -sf localhost:8080/v1/audit && break; sleep 1; done
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm run test:e2e
+      - if: failure()
+        run: cat backend.log

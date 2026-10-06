@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --text: #16181d;
+  --muted: #5d6370;
+  --line: #e6e4df;
+  --accent: #4f46e5;
+  --accent-text: #ffffff;
+  --pos: #047857;
+  --neg: #b91c1c;
+  --warn-bg: #fef3c7;
+  --warn: #92400e;
+  --ok-bg: #d1fae5;
+  --err-bg: #fee2e2;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c0d11;
+    --surface: #15171d;
+    --text: #e9eaee;
+    --muted: #9aa0ad;
+    --line: #262a33;
+    --accent: #818cf8;
+    --accent-text: #0c0d11;
+    --pos: #34d399;
+    --neg: #f87171;
+    --warn-bg: #3a2a0a;
+    --warn: #fbbf24;
+    --ok-bg: #0c2e22;
+    --err-bg: #3a1214;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+@layer components {
+  .card { @apply rounded-2xl border p-5; background: var(--surface); border-color: var(--line); }
+  .h1 { @apply text-2xl font-semibold tracking-tight; }
+  .h2 { @apply text-base font-semibold; }
+  .hint { @apply text-xs; color: var(--muted); font-family: var(--font-mono), monospace; }
+  .field { @apply flex flex-col gap-1.5 text-sm; }
+  .field > span { color: var(--muted); font-weight: 500; }
+  .field input:not([type="checkbox"]), .field select {
+    @apply w-full rounded-lg border px-3 py-2 outline-none;
+    background: var(--bg); border-color: var(--line); color: var(--text);
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+  .btn { @apply rounded-lg px-4 py-2 text-sm font-semibold transition disabled:opacity-50; background: var(--accent); color: var(--accent-text); }
+  .btn:not(:disabled):hover { filter: brightness(1.08); }
+  .btn-quiet { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .badge { @apply rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap; }
+  .badge-ok { background: var(--ok-bg); color: var(--pos); }
+  .badge-err { background: var(--err-bg); color: var(--neg); }
+  .status { @apply rounded-lg px-3 py-1.5 text-sm; animation: pop .25s ease-out; }
+  .status-ok { background: var(--ok-bg); color: var(--pos); }
+  .status-warn { background: var(--warn-bg); color: var(--warn); }
+  .status-err { background: var(--err-bg); color: var(--neg); }
+  .table { @apply w-full text-sm; }
+  .table th { @apply py-2 pr-4 text-left text-xs font-semibold uppercase tracking-wide; color: var(--muted); }
+  .table td { @apply border-t py-2.5 pr-4; border-color: var(--line); }
+  .table tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+  .mono { font-family: var(--font-mono), monospace; }
+}
+
+@keyframes pop { from { opacity: 0; transform: translateY(3px); } }

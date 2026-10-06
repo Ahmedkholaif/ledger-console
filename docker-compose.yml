@@ -1,0 +1,19 @@
+# Full stack: Postgres + ledgerd (Go) + this console.
+# Swap the ledger service for ledger-nest to run the console on NestJS instead.
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: ledger }
+    healthcheck: { test: ["CMD", "pg_isready", "-U", "postgres"], interval: 2s, retries: 20 }
+  ledger:
+    build: https://github.com/Ahmedkholaif/ledgerd.git
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/ledger?sslmode=disable
+    ports: ["8080:8080"]
+    depends_on: { postgres: { condition: service_healthy } }
+  console:
+    build: .
+    environment:
+      LEDGER_API_URL: http://ledger:8080
+    ports: ["3000:3000"]
+    depends_on: [ledger]
